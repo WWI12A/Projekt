@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <Form version="1.3" maxVersion="1.9" type="org.netbeans.modules.form.forminfo.JFrameFormInfo">
+  <NonVisualComponents>
+    <Component class="java.awt.List" name="list1">
+    </Component>
+  </NonVisualComponents>
   <Properties>
     <Property name="defaultCloseOperation" type="int" value="3"/>
   </Properties>
@@ -8,6 +12,10 @@
     <SyntheticProperty name="formSizePolicy" type="int" value="1"/>
     <SyntheticProperty name="generateCenter" type="boolean" value="false"/>
   </SyntheticProperties>
+  <Events>
+    <EventHandler event="windowClosed" listener="java.awt.event.WindowListener" parameters="java.awt.event.WindowEvent" handler="formWindowClosed"/>
+    <EventHandler event="windowClosing" listener="java.awt.event.WindowListener" parameters="java.awt.event.WindowEvent" handler="formWindowClosing"/>
+  </Events>
   <AuxValues>
     <AuxValue name="FormSettings_autoResourcing" type="java.lang.Integer" value="0"/>
     <AuxValue name="FormSettings_autoSetComponentName" type="java.lang.Boolean" value="false"/>
@@ -25,19 +33,27 @@
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="103" alignment="0" groupAlignment="1" attributes="0">
+              <Group type="103" groupAlignment="1" attributes="0">
+                  <Group type="103" alignment="1" groupAlignment="0" attributes="0">
                       <Component id="Eingabefeld" min="-2" pref="311" max="-2" attributes="0"/>
-                      <Component id="Senden" min="-2" pref="100" max="-2" attributes="0"/>
+                      <Component id="jScrollPane1" alignment="0" min="-2" pref="311" max="-2" attributes="0"/>
                   </Group>
-                  <Component id="jScrollPane1" alignment="0" min="-2" pref="311" max="-2" attributes="0"/>
+                  <Component id="Senden" alignment="1" min="-2" pref="100" max="-2" attributes="0"/>
               </Group>
-              <EmptySpace min="-2" pref="32" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="UserName" pref="138" max="32767" attributes="0"/>
-                  <Component id="Verbinden" max="32767" attributes="0"/>
-                  <Component id="Trennen" alignment="0" max="32767" attributes="0"/>
-                  <Component id="UserListe" alignment="1" max="32767" attributes="0"/>
+                  <Group type="102" attributes="0">
+                      <EmptySpace min="-2" pref="32" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="UserName" max="32767" attributes="0"/>
+                          <Component id="Verbinden" max="32767" attributes="0"/>
+                          <Component id="Trennen" alignment="0" max="32767" attributes="0"/>
+                          <Component id="UserListe" alignment="1" max="32767" attributes="0"/>
+                      </Group>
+                  </Group>
+                  <Group type="102" alignment="1" attributes="0">
+                      <EmptySpace max="32767" attributes="0"/>
+                      <Component id="UserVerbinden" min="-2" pref="133" max="-2" attributes="0"/>
+                  </Group>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -48,10 +64,14 @@
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                  <Group type="102" attributes="0">
+                      <Component id="UserVerbinden" min="-2" pref="23" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="UserListe" max="32767" attributes="0"/>
+                  </Group>
                   <Component id="jScrollPane1" min="-2" pref="160" max="-2" attributes="0"/>
-                  <Component id="UserListe" min="-2" pref="161" max="-2" attributes="0"/>
               </Group>
-              <EmptySpace max="32767" attributes="0"/>
+              <EmptySpace pref="12" max="32767" attributes="0"/>
               <Group type="103" groupAlignment="0" max="-2" attributes="0">
                   <Component id="Eingabefeld" pref="34" max="32767" attributes="0"/>
                   <Component id="UserName" max="32767" attributes="0"/>
@@ -98,7 +118,7 @@
     </Component>
     <Component class="javax.swing.JButton" name="Verbinden">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Verbinden"/>
+        <Property name="text" type="java.lang.String" value="Verbinden mit Server"/>
         <Property name="enabled" type="boolean" value="false"/>
       </Properties>
       <Events>
@@ -126,17 +146,16 @@
       </Events>
     </Component>
     <Component class="java.awt.List" name="UserListe">
-      <Properties>
-        <Property name="minimumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-          <Dimension value="[123, 168]"/>
-        </Property>
-        <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-          <Dimension value="[123, 168]"/>
-        </Property>
-      </Properties>
       <Events>
         <EventHandler event="mouseEntered" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="UserListeMouseEntered"/>
-        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="UserListeActionPerformed"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JButton" name="UserVerbinden">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Verbinden mit User"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="UserVerbindenActionPerformed"/>
       </Events>
     </Component>
   </SubComponents>
