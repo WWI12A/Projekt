@@ -45,9 +45,9 @@ public class RemoteImpl extends UnicastRemoteObject implements TestRemote {
       
     
     @Override
-    public void senden(String message, String UserName) throws RemoteException {
+    public void senden(String message, String UserName, String ZielUser) throws RemoteException {
         try {
-            server.senden(message, UserName);
+            server.senden(message, UserName, ZielUser);
         } catch (IOException ex) {
             }
     }
@@ -105,18 +105,26 @@ public class RemoteImpl extends UnicastRemoteObject implements TestRemote {
         }
 
     @Override
-    public void schluesselTausch(String header, byte[] key, String Nutzername, String ZielUser) throws RemoteException {
+    public byte[] schluesselTausch(String Nutzername, String ZielUser) throws RemoteException {
+        byte[] wrappedKey = null;
+       
         try {
-            server.schluesselTausch(header, key, Nutzername, ZielUser);
+            wrappedKey = new byte[server.schluesselTausch(Nutzername, ZielUser).length];
+            wrappedKey= server.schluesselTausch(Nutzername, ZielUser);
+           
         } catch (IOException ex) {
+            Logger.getLogger(RemoteImpl.class.getName()).log(Level.SEVERE, null, ex);
         }
+        return(wrappedKey);
+        
     }
 
     @Override
-    public void sendeAES(String aes, String ZielUser, String Nutzername) throws RemoteException {
+    public void speicherAES(byte [] aes, String ZielUser, String Nutzername) throws RemoteException {
         try {
-            server.sendeAES(aes, ZielUser, Nutzername);
+            server.speicherAES(aes, ZielUser, Nutzername);
         } catch (IOException ex) {
+            Logger.getLogger(RemoteImpl.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }

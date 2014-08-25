@@ -85,20 +85,16 @@ public class Server {
     }
     
     //Sendenmethode die die Hashtabelle durchläuft und an alle angemeldeten Clients die Nachricht die mitgegeben wird versendet. Zusätzlich mit dem Nutzernamen
-    public void senden(String message, String UserName) throws IOException {
-        Iterator it = Nutzer.keySet().iterator();
-        String user=null;
-        while(it.hasNext()){
-            
-            user= it.next().toString();
-            client = (Socket) Nutzer.get(user);
+    public void senden(String message, String UserName, String ZielUser) throws IOException {
+        
+            client = (Socket) Nutzer.get(ZielUser);
             out= new DataOutputStream(client.getOutputStream());
             System.out.println(client+ message);
             out.writeUTF(UserName+ ":"+ message);
             
             
                    
-        }
+        
         
     }
     //Übergibt den Nutzername, damit dieser bekannt ist. Und speichert ihn in die Namensliste der online User
@@ -155,7 +151,8 @@ public class Server {
         
         
     }
-
+    //Methode die zur Übermittlung von Nachrichrichten via Header funktioniert. Header sind KEY, VERBINDEN, TRENNEN, VERBINDUNG
+    // je nach Header wahl, wird im Client unterschiedlich agiert
     public void verbindenUser(String header, String Nutzername, String ZielUser) throws IOException {
         Socket ziel;
         
@@ -165,21 +162,22 @@ public class Server {
         out.writeUTF(header+":"+Nutzername);
         
     }
-
+    //Methode die den jeweiligen Nutzer aus der onlineListe nicht aber aus der UserListe schmeißt!
     void zeigeOff(String UserName) {
         onlineUser.remove(UserName);
     }
 
     //Methode nicht mehr in Verwendung. Siehe sendeAES
-    void schluesselTausch(String header, byte[] key, String Nutzername, String ZielUser) throws IOException {
-        Socket ziel;
+    public byte[] schluesselTausch(String Nutzername, String ZielUser) throws IOException {
+         //Datei Variable anlegen von AesEncrypted.key
+       File datei = new File("AesEncr-"+ZielUser+".key");
+       //Liest die Datei in umgekehrter Reihenfolge wie sie gespeichert wurde wieder ein.
+       DataInputStream in = new DataInputStream(new FileInputStream(datei));
+        int length = in.readInt();
+        byte[] wrappedKey = new byte[length];
+        in.read(wrappedKey, 0, length);
+        return(wrappedKey);
         
-        //Senden des Headers KEYs, zum initialisieren des Schlüsselaustausches
-        verbindenUser("KEY", Nutzername, ZielUser);
-        ziel= (Socket) Nutzer.get(ZielUser);
-        System.out.println("Das ist der schlüssel: " +key);
-        OutputStream out= ziel.getOutputStream();
-        out.write(key);
         
         
         
@@ -187,13 +185,18 @@ public class Server {
        
     }
 
-    void sendeAES(String aes, String ZielUser,String Nutzername) throws IOException {
-        Socket ziel;
+    void speicherAES(byte[] aes, String ZielUser,String Nutzername) throws IOException {
+        //Erzeugen einer Datei mti dem Namen AesEncr-Nutzername.key
+        File datei = new File("AesEncr-"+Nutzername+".key");
         
-        ziel = (Socket) Nutzer.get(ZielUser);
+        //Schickt den Header Key mit dem Nutzer an den ZielUser, damit dieser den KEY abholen kann
         verbindenUser("KEY", Nutzername, ZielUser);
-        DataOutputStream out = new DataOutputStream(ziel.getOutputStream());
-        out.writeUTF(aes);
+        
+        //Schreibt den Schlüssel in Datei mit der Länge des Schlüssel am Anfang
+        DataOutputStream out = new DataOutputStream(new FileOutputStream(datei));
+        out.writeInt(aes.length);
+        out.write(aes);
+        out.close();
     }
    
     

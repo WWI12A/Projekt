@@ -39,6 +39,7 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
     private Thread thread;
     private int schleife =0;
     private AES aes;
+    String ZielUser= null ;
     
     
     
@@ -61,6 +62,8 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
         System.out.println(remote.isLoginValid("heiko"));
         //AES Objekt erzeugen um auf die Methoden der Klasse zuzugreifen zu können.
         aes = new AES();
+        //AES Schlüssel anlegen
+        aes.SchlüsselInDatei();
         //RSA Schlüsselpaar erzeugen und in Datei speichern
         generateRSA();
         //Liste wer online ist updaten
@@ -216,7 +219,7 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
        
         try {
     //Wenn Senden gedrückt wird, inhalt von Eingabefeld an Server schicken, den Stringn davor mittels AES verschlüsseln
-            remote.senden(aes.verschlüsseln(aes.SchlüsselAusDatei(), Eingabefeld.getText()), UserName.getText());
+            remote.senden(aes.verschlüsseln(aes.SchlüsselAusDatei(), Eingabefeld.getText()), UserName.getText(), ZielUser);
         } catch (RemoteException ex) {
            
         } catch (Exception ex) {
@@ -277,7 +280,7 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
         }
        
             // Verschiedene Buttons sperren bzw. freigeben
-             Senden.setEnabled(true);
+             
              Verbinden.setEnabled(false);
              Trennen.setEnabled(true);
              UserName.setEnabled(false);
@@ -359,7 +362,9 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
     //Verbindung mit einem ausgewählten User soll aufgebaut werden
     private void UserVerbindenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_UserVerbindenActionPerformed
         // TODO add your handling code here:
-        String ZielUser ="";
+        
+        
+        
         
         
         //Überprüfung ob verbunden oder getrennt werden soll
@@ -375,6 +380,8 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
             
         // Button-Namen ändern damit getrennt werden kann
         UserVerbinden.setText("Trennen von User");
+        //Senden-Button verfügbar machen
+        Senden.setEnabled(true);
         
             try {
                 //Offline anzeigen um keine weiteren Anfragen zu erhalten
@@ -393,6 +400,9 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
             UserListe.setEnabled(true);
             //Den Button-Namen ändern
             UserVerbinden.setText("Verbinden mit User");
+            //Senden-Button sperren
+            Senden.setEnabled(false);
+            
             
             try {
                 //dem Gegenüber mitteilen, dass man den Chat verlassen hat
@@ -519,7 +529,7 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
             //Wenn die Nachricht den Header 'TRENNEN' enthält, entweder bei beendigung oder bei ablehnen der Verbindung
             }else if(nachrichten[0].equals("TRENNEN")){
                     //Nachricht ausgeben, dass getrennt wird bzw. abgelehnt wurde
-                    Anzeigefeld.append("Verbindung von "+ nachrichten[1]+ "wurde getrennt/abgelehnt!");
+                    Anzeigefeld.append("Verbindung von "+ nachrichten[1]+ "wurde getrennt/abgelehnt! \n");
                     //UserListe entsperren
                     UserListe.setEnabled(true);
                     //Verbinden mit User- Button auf Verbinden stellen
@@ -539,12 +549,13 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
             //wird aufgerufen wenn der Header KEY mitgegeben wird.
             }else if(nachrichten[0].equals("KEY")){
                 
-                // Umwandeln des Eingehenden Strings in ein Byte Array
-                int length = in.readInt();
-                byte[] wrappedKey = new byte[length];
-                in.read(wrappedKey, 0, length);
+                // Aufruf der Methode Decrypt AES mit der Methode vom Server holeAES
+                DecryptAES(remote.schluesselTausch(UserName.getText(), nachrichten[1]));
                 
-                DecryptAES(wrappedKey);
+               // Überprüfungen;
+                                System.out.println("Header KEY erhalten");
+
+                System.out.println("Ich will den schlüssel von "+nachrichten[1]);
                 
                
 
@@ -571,26 +582,44 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
         
     
     }
-    public void AESanServer(String ZielUser) throws FileNotFoundException, IOException {
+    //Methode die den mit RSA verschlüsselten AES-Schlüssel an den Server weiterleiten soll
+    public void AESanServer(String ZielUser) throws FileNotFoundException, IOException, ClassNotFoundException {
         
-        //AES schlüssel mit SchlüsselausDatei() und RSA mit holePublic vom Server
-        File datei = new File("AesEncrypted");
-        DataInputStream in = new DataInputStream(new FileInputStream(datei));
-        String encrAES = in.readUTF();
-        remote.sendeAES(encrAES, ZielUser, UserName.getText());
         
+        
+        //Datei Variable anlegen von AesEncrypted.key
+       File datei = new File("AesEncrypted.key");
+       //Liest die Datei in umgekehrter Reihenfolge wie sie gespeichert wurde wieder ein.
+       DataInputStream in = new DataInputStream(new FileInputStream(datei));
+        int length = in.readInt();
+        byte[] wrappedKey = new byte[length];
+        in.read(wrappedKey, 0, length);
+        
+              
+       //Aufruf der Methode speicherAES vom Server und Key und Nutzername übermitteln
+       remote.speicherAES(wrappedKey, ZielUser, UserName.getText());
+       //Überprüfung ob es geklappt hat
+       System.out.println("es stimmt");
 
     
     }
+    //Methode die den AES Schlüssel verschlüsselt und in Datei ablegt
     public void EncryptAES(String ZielUser) throws NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, FileNotFoundException, IOException, InvalidKeyException, Exception{
         
-        File datei = new File("AesEncrypted");
+        //Erzeugt eine Datei mit folgendem Namen
+        File datei = new File("AesEncrypted.key");
+        
+        //Erzeugt einen RSA Cipher
         Cipher cipher = Cipher.getInstance("RSA");
+        //Initialisiert den Cipher mit Wrap-Modus und dem öffentlichen Schlüssel des ZielUsers
         cipher.init(Cipher.WRAP_MODE, remote.holePublic(ZielUser));
+        //Ezeugt byte Array des verpackten AES-Schlüssel mit RSA
         byte[] wrappedKey = cipher.wrap(aes.SchlüsselAusDatei());
+        //Schreibt den Schlüssel in Datei mit der Länge des Schlüssel am Anfang
         DataOutputStream out = new DataOutputStream(new FileOutputStream(datei));
         out.writeInt(wrappedKey.length);
         out.write(wrappedKey);
+        out.close();
     
     
     }
@@ -603,14 +632,23 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
         ObjectInputStream keyIn = new ObjectInputStream(new FileInputStream(datei));
         Key privateKey = (Key) keyIn.readObject();
         keyIn.close();
+        System.out.println(privateKey);
         
         //Entschlüssle das Übergebene Byte Array mittels RSA und privatem Schlüssel
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.UNWRAP_MODE, privateKey);
         Key key = cipher.unwrap(encrAES, "AES", Cipher.SECRET_KEY);
         
-        //Ausgabe des entschlüsseltem AES keys zur überprüfung
-        System.out.println(key);
+        //Datei für den AES KEy erzeugen
+        File aes = new File("AES.key");
+        
+        //Den Schlüssel in die Datei schreiben
+        FileOutputStream keyfos = new FileOutputStream(aes);
+        byte[] AES = key.getEncoded();
+        keyfos.write(AES);
+        keyfos.close();
+        //Ausgabe zur überprüfung
+        System.out.println("Es ist etwas passiert");
         
         
         
