@@ -92,6 +92,12 @@ public class Server {
             System.out.println(client+ message);
             out.writeUTF(UserName+ ":"+ message);
             
+                //An eigenen Nutzer auch ausgeben
+            client = (Socket) Nutzer.get(UserName);
+            out= new DataOutputStream(client.getOutputStream());
+             out.writeUTF(UserName+ ":"+ message);
+            
+            
             
                    
         

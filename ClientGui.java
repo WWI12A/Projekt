@@ -521,6 +521,8 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
                     remote.zeigeOff(UserName.getText());
                     //Rückantwort,dass Verbindung aufgebaut werden soll!
                     remote.verbindenUser("VERBINDEN", UserName.getText(), nachrichten[1]);
+                    //Übergabe des Namens des Chat-Partners in die globale Variable 
+                    ZielUser= nachrichten[1];
                 
                 }else{
                     remote.verbindenUser("TRENNEN", UserName.getText() ,nachrichten[1] );
@@ -552,8 +554,11 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
                 // Aufruf der Methode Decrypt AES mit der Methode vom Server holeAES
                 DecryptAES(remote.schluesselTausch(UserName.getText(), nachrichten[1]));
                 
+                //Senden-Button freigeben
+                Senden.setEnabled(true);
+                
                // Überprüfungen;
-                                System.out.println("Header KEY erhalten");
+                System.out.println("Header KEY erhalten");
 
                 System.out.println("Ich will den schlüssel von "+nachrichten[1]);
                 
