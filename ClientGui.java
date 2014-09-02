@@ -16,6 +16,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.rmi.ssl.SslRMIClientSocketFactory;
 import javax.swing.JOptionPane;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
@@ -53,17 +55,28 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
         // Layout initiieren
         initComponents();
         
+        /* SSL Teil ausgeklammert:
+        SSLServerSocketFactory sssf ;
+        System.out.println(SSLServerSocketFactory.getDefault());
+        try{
+        //SSLRMIClientSocketFactory erzeugen
+        SslRMIClientSocketFactory csf = new SslRMIClientSocketFactory();
+        //Verbindung aufbauen zum Registry um mittels RMI Methodenaufrufe zu starten.
+        Registry registry =LocateRegistry.getRegistry("localhost", 2222, csf);
+        }catch (NotBoundException | RemoteException e){
         
+        System.out.println(e);
+        }
+        */
         //Verbindung aufbauen zum Registry um mittels RMI Methodenaufrufe zu starten.
         Registry registry =LocateRegistry.getRegistry("localhost", 2222);
         //Anlegenen eines TestRemotes Objektes um auf die Methoden zugreifen zu können.
         remote= (TestRemote) registry.lookup("remote");
+        
         //Überprüfen ob Methodenaufruf klappt
         System.out.println(remote.isLoginValid("heiko"));
         //AES Objekt erzeugen um auf die Methoden der Klasse zuzugreifen zu können.
         aes = new AES();
-        //AES Schlüssel anlegen
-        aes.SchlüsselInDatei();
         //RSA Schlüsselpaar erzeugen und in Datei speichern
         generateRSA();
         //Liste wer online ist updaten
@@ -388,8 +401,12 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
                 remote.zeigeOff(UserName.getText());
                 //Aufruf der Server-Methode zum Verbinden mit Client
                 remote.verbindenUser("VERBINDUNG", UserName.getText(), ZielUser);
+                //AES Schlüssel anlegen
+                 aes.SchlüsselInDatei();
                 
             } catch (RemoteException ex) {
+            } catch (Exception ex) {
+                Logger.getLogger(ClientGui.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
       
@@ -531,7 +548,7 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
             //Wenn die Nachricht den Header 'TRENNEN' enthält, entweder bei beendigung oder bei ablehnen der Verbindung
             }else if(nachrichten[0].equals("TRENNEN")){
                     //Nachricht ausgeben, dass getrennt wird bzw. abgelehnt wurde
-                    Anzeigefeld.append("Verbindung von "+ nachrichten[1]+ "wurde getrennt/abgelehnt! \n");
+                    Anzeigefeld.append("Verbindung von "+ nachrichten[1]+ " wurde getrennt/abgelehnt! \n");
                     //UserListe entsperren
                     UserListe.setEnabled(true);
                     //Verbinden mit User- Button auf Verbinden stellen
@@ -543,9 +560,11 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
             }else if(nachrichten[0].equals("VERBINDEN")){
                 //Ausgabe dass Schlüsselaustausch stattfinden kann
                 Anzeigefeld.append("Schlüssel wird an "+nachrichten[1]+ " gesendet \n");
-                //Aufruf der Methode zum Schlüsselaustausch. Überträgt byte[] des Schlüssels
+
+                //Den eigenen AES Schlüssel mit öffentlichem Schlüssel des Gegenübers verschlüsseln
                 EncryptAES(nachrichten[1]);
                 
+                //Aufruf der Methode zum Schlüsselaustausch. Überträgt byte[] des Schlüssels
                 AESanServer(nachrichten[1]);      
                 
             //wird aufgerufen wenn der Header KEY mitgegeben wird.
@@ -577,7 +596,7 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
     }
 }
     //Methode die die Usernamen in die UserListe anhängt. Sie nimmt eine ArrayList entgegen und durchläuft diese einzeln in einer For-Schleife
-    public void online (ArrayList users) throws RemoteException{
+    public final void online (ArrayList users) throws RemoteException{
         String i;
         UserListe.removeAll();
         for (Object user : users) {
@@ -618,6 +637,7 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
         Cipher cipher = Cipher.getInstance("RSA");
         //Initialisiert den Cipher mit Wrap-Modus und dem öffentlichen Schlüssel des ZielUsers
         cipher.init(Cipher.WRAP_MODE, remote.holePublic(ZielUser));
+        
         //Ezeugt byte Array des verpackten AES-Schlüssel mit RSA
         byte[] wrappedKey = cipher.wrap(aes.SchlüsselAusDatei());
         //Schreibt den Schlüssel in Datei mit der Länge des Schlüssel am Anfang
@@ -645,10 +665,10 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
         Key key = cipher.unwrap(encrAES, "AES", Cipher.SECRET_KEY);
         
         //Datei für den AES KEy erzeugen
-        File aes = new File("AES.key");
+        File aeskey = new File("AES.key");
         
         //Den Schlüssel in die Datei schreiben
-        FileOutputStream keyfos = new FileOutputStream(aes);
+        FileOutputStream keyfos = new FileOutputStream(aeskey);
         byte[] AES = key.getEncoded();
         keyfos.write(AES);
         keyfos.close();

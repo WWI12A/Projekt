@@ -10,6 +10,10 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.util.*;
 import javax.crypto.SecretKey;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.rmi.ssl.SslRMIClientSocketFactory;
+import javax.rmi.ssl.SslRMIServerSocketFactory;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -34,11 +38,21 @@ public class Server {
     
     
     
-    public Server(int port) throws IOException, RemoteException, AlreadyBoundException{
+    public Server(int port) throws IOException, RemoteException, AlreadyBoundException, Exception{
         //Erstellen der Remoteimplementation
         RemoteImpl impl = new RemoteImpl(this);
-        //Erstellen der registry auf Port 2222
-        Registry registry = LocateRegistry.createRegistry(2222);
+        
+        /*
+        //Erzeugen von Client und ServerSocketFactory
+        SslRMIClientSocketFactory csf = new SslRMIClientSocketFactory();
+        SslRMIServerSocketFactory ssf = new SslRMIServerSocketFactory();
+        
+        //Erstellen der registry auf Port 2222 mit dem clientSocketFactory und ServerSocketFactory
+        Registry registry = LocateRegistry.createRegistry(2222, csf,  ssf);
+        */
+        
+        //Erstellen der Registry auf Port 2222
+         Registry registry = LocateRegistry.createRegistry(2222);
         //Den Namen "remote" zum auffinden in die Registry binden mit der Remoteimplementation
         registry.bind("remote", impl);
         System.out.println("server startet...");
@@ -47,7 +61,7 @@ public class Server {
     
     }
     
-    public static void main(String[] args) throws RemoteException, AlreadyBoundException, IOException{
+    public static void main(String[] args) throws RemoteException, AlreadyBoundException, IOException, Exception{
         
         //Erstellt neuen Insanz des Servers, damit dieser startet
         new Server(8080);
@@ -65,6 +79,7 @@ public class Server {
         //Server akzeptiert Client und fügt ihn zur Tabelle hinzu
         hinzufügen(socket.accept());
         System.out.println(Nutzer);
+        
         
         
       
@@ -173,7 +188,7 @@ public class Server {
         onlineUser.remove(UserName);
     }
 
-    //Methode nicht mehr in Verwendung. Siehe sendeAES
+    //Methode die den verpackten AES an den Chat Partner übergibt
     public byte[] schluesselTausch(String Nutzername, String ZielUser) throws IOException {
          //Datei Variable anlegen von AesEncrypted.key
        File datei = new File("AesEncr-"+ZielUser+".key");
