@@ -9,6 +9,7 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.*;
@@ -17,6 +18,8 @@ import java.util.logging.Logger;
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
 import javax.swing.JOptionPane;
 import sun.misc.BASE64Decoder;
@@ -35,7 +38,9 @@ import sun.misc.BASE64Encoder;
 public class ClientGui extends javax.swing.JFrame implements Runnable {
 
     //Deklaration verschiedener Variablen
-    private Socket s;
+  
+    //private Socket s;
+    private SSLSocket s;
     private DataInputStream in;
     private TestRemote remote;
     private Thread thread;
@@ -55,23 +60,37 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
         // Layout initiieren
         initComponents();
         
-        /* SSL Teil ausgeklammert:
+        //Dem Client mitteilen, wo sein TrustStore liegt. Dieser wurde zuvor mit Keytool erzeugt:
+        //keytool erzeugt KeyStore dann wird selbstsigniertes Zertifikat exportiert um im Client importiert und als Vertrauenswürdig erteilt
+        System.setProperty("javax.net.ssl.trustStore", "clientstore.jks");
+        System.setProperty("javax.net.ssl.trustStorePassword", "password");
+       
+        //Dem Client mitteilen, wo sein KeyStore liegt, in diesem Fall gleichzeitig sein TrustStore
+        System.setProperty("javax.net.ssl.keyStore", "clientstore.jks");
+        System.setProperty("javax.net.ssl.keyStorePassword", "password");
+
+        //KeyStore aus der Datei laden
+        KeyStore ks  = KeyStore.getInstance("JKS");
+        ks.load(new FileInputStream("clientstore.jks"), "password".toCharArray());
+            
+        //   SSLServerSocketFactory initialisieren
         SSLServerSocketFactory sssf ;
-        System.out.println(SSLServerSocketFactory.getDefault());
         try{
         //SSLRMIClientSocketFactory erzeugen
         SslRMIClientSocketFactory csf = new SslRMIClientSocketFactory();
-        //Verbindung aufbauen zum Registry um mittels RMI Methodenaufrufe zu starten.
+        //Verbindung aufbauen zum Registry auf Localhost, Port 2222 und dem SslRMiClientSocketFactory, um mittels RMI Methodenaufrufe zu starten.
         Registry registry =LocateRegistry.getRegistry("localhost", 2222, csf);
-        }catch (NotBoundException | RemoteException e){
+        
+        
+        //Verbindung aufbauen zum Registry um mittels RMI Methodenaufrufe zu starten. Ohne RMI,deshalbt auskommentiert
+        //Registry registry =LocateRegistry.getRegistry("localhost", 2222);
+        
+        //Anlegenen eines TestRemotes Objektes um auf die Methoden zugreifen zu können.
+        remote= (TestRemote) registry.lookup("remote");
+        }catch (RemoteException | NotBoundException e){
         
         System.out.println(e);
         }
-        */
-        //Verbindung aufbauen zum Registry um mittels RMI Methodenaufrufe zu starten.
-        Registry registry =LocateRegistry.getRegistry("localhost", 2222);
-        //Anlegenen eines TestRemotes Objektes um auf die Methoden zugreifen zu können.
-        remote= (TestRemote) registry.lookup("remote");
         
         //Überprüfen ob Methodenaufruf klappt
         System.out.println(remote.isLoginValid("heiko"));
@@ -276,8 +295,15 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
                 
             }
              try {
-             // Neuen Socket aufbauen auf Localhost und Port 8080, je nach dem wo Server läuft!
-            s = new Socket ("localhost" , 8080);
+                 //Alter Socket ohne SSL
+                 // s = new Socket ("localhost" , 8080);
+
+            // Socket mit SSL zum Server aufbauen auf Port 8080 und Localhost
+            SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+             s = (SSLSocket) sslsocketfactory.createSocket("localhost", 8080);
+            
+                 
+            
             Anzeigefeld.append("Erfolgreich verbunden mit: " +s +"\n");
                                   
         } catch (IOException ex) {
@@ -576,10 +602,8 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
                 //Senden-Button freigeben
                 Senden.setEnabled(true);
                 
-               // Überprüfungen;
-                System.out.println("Header KEY erhalten");
-
-                System.out.println("Ich will den schlüssel von "+nachrichten[1]);
+               // Anzeigen, das Schlüssel erhalten wurde und Kommunikation starten kann
+                Anzeigefeld.append("Key von "+ nachrichten[1] +" erhalten. Kommunikation kann starten! \n");
                 
                
 
@@ -672,8 +696,7 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
         byte[] AES = key.getEncoded();
         keyfos.write(AES);
         keyfos.close();
-        //Ausgabe zur überprüfung
-        System.out.println("Es ist etwas passiert");
+      
         
         
         

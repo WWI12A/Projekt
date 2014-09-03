@@ -9,9 +9,9 @@ import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.util.*;
-import javax.crypto.SecretKey;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
 import javax.rmi.ssl.SslRMIServerSocketFactory;
 
@@ -27,7 +27,8 @@ import javax.rmi.ssl.SslRMIServerSocketFactory;
  */
 public class Server {
     //Variablendeklarationen
-    private ServerSocket socket;
+    //private ServerSocket socket;
+    private SSLServerSocket socket ;
     private Hashtable Nutzer = new Hashtable();
     private String UserName ="kein Name übermittelt";
     private DataOutputStream out;
@@ -42,19 +43,30 @@ public class Server {
         //Erstellen der Remoteimplementation
         RemoteImpl impl = new RemoteImpl(this);
         
-        /*
+        
+        //Laden der Zertifikate bzw. des KeyStores, welcher das eigene Zertifikat enthält
+        KeyStore ks  = KeyStore.getInstance("JKS");
+        ks.load(new FileInputStream("keystore.jks"), "password".toCharArray());
+        
+        //Dem Server mitteilen, wo sein KeyStore liegt und welches Passwort gilt
+        System.setProperty("javax.net.ssl.keyStore", "keystore.jks");
+        System.setProperty("javax.net.ssl.keyStorePassword", "password");
+
+        
         //Erzeugen von Client und ServerSocketFactory
         SslRMIClientSocketFactory csf = new SslRMIClientSocketFactory();
         SslRMIServerSocketFactory ssf = new SslRMIServerSocketFactory();
         
-        //Erstellen der registry auf Port 2222 mit dem clientSocketFactory und ServerSocketFactory
+        //Erstellen der registry auf Port 2222 mit dem SslRmiclientSocketFactory und SslRmiServerSocketFactory
         Registry registry = LocateRegistry.createRegistry(2222, csf,  ssf);
-        */
+        
         
         //Erstellen der Registry auf Port 2222
-         Registry registry = LocateRegistry.createRegistry(2222);
+        // Registry registry = LocateRegistry.createRegistry(2222);
         //Den Namen "remote" zum auffinden in die Registry binden mit der Remoteimplementation
         registry.bind("remote", impl);
+        
+        
         System.out.println("server startet...");
         //startet die Methode listen, die auf sich verbindende Clients wartet und aktzeptiert
         listen(port);
@@ -71,7 +83,15 @@ public class Server {
     
     private void listen(int port) throws IOException{
         //Erstellen eines Serversockets auf mitgegebenem Port
-        socket = new ServerSocket(port);
+        
+        //SSL ServerSocket erstellen auf mitgegebenem Port 
+        SSLServerSocketFactory sslserversocketfactory =(SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+             socket =  (SSLServerSocket) sslserversocketfactory.createServerSocket(port);
+         
+            
+        //Alter Socket ohne SSL 
+        //socket = new ServerSocket(port);
+        
         System.out.println("Server aktiv auf: " + socket);
         
         while(true){
@@ -177,7 +197,7 @@ public class Server {
     public void verbindenUser(String header, String Nutzername, String ZielUser) throws IOException {
         Socket ziel;
         
-        ziel= (Socket) Nutzer.get(ZielUser);
+        ziel= (SSLSocket) Nutzer.get(ZielUser);
         
         out = new DataOutputStream(ziel.getOutputStream());
         out.writeUTF(header+":"+Nutzername);
