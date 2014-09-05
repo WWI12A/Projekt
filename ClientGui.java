@@ -75,6 +75,7 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
             
         //   SSLServerSocketFactory initialisieren
         SSLServerSocketFactory sssf ;
+        
         try{
         //SSLRMIClientSocketFactory erzeugen
         SslRMIClientSocketFactory csf = new SslRMIClientSocketFactory();
@@ -87,9 +88,9 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
         
         //Anlegenen eines TestRemotes Objektes um auf die Methoden zugreifen zu können.
         remote= (TestRemote) registry.lookup("remote");
-        }catch (RemoteException | NotBoundException e){
+        }catch(NotBoundException | RemoteException e){
+                    Logger.getLogger(ClientGui.class.getName()).log(Level.SEVERE, null, e);
         
-        System.out.println(e);
         }
         
         //Überprüfen ob Methodenaufruf klappt
@@ -249,12 +250,17 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
     //Aufruf bei drücken von "Senden"
     private void SendenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SendenActionPerformed
        
+       
         try {
     //Wenn Senden gedrückt wird, inhalt von Eingabefeld an Server schicken, den Stringn davor mittels AES verschlüsseln
             remote.senden(aes.verschlüsseln(aes.SchlüsselAusDatei(), Eingabefeld.getText()), UserName.getText(), ZielUser);
         } catch (RemoteException ex) {
+                        Logger.getLogger(ClientGui.class.getName()).log(Level.SEVERE, null, ex);
+
            
         } catch (Exception ex) {
+                        Logger.getLogger(ClientGui.class.getName()).log(Level.SEVERE, null, ex);
+
         }
            //Anzeigefeld.append("Ich: " +Eingabefeld.getText()+ "\n" );
            Eingabefeld.setText("");
@@ -292,7 +298,7 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
             try {
                 remote.verbinden(UserName.getText());
             } catch (RemoteException ex) {
-                
+                          Logger.getLogger(ClientGui.class.getName()).log(Level.SEVERE, null, ex); 
             }
              try {
                  //Alter Socket ohne SSL
@@ -314,8 +320,11 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
        try {
             keyAnServer();
         } catch (RemoteException ex) {
-            
+                        Logger.getLogger(ClientGui.class.getName()).log(Level.SEVERE, null, ex);
+
         } catch (IOException | ClassNotFoundException ex) {
+                        Logger.getLogger(ClientGui.class.getName()).log(Level.SEVERE, null, ex);
+
         }
        
             // Verschiedene Buttons sperren bzw. freigeben
@@ -395,7 +404,7 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
         try {
             remote.trennen(UserName.getText());
         } catch (RemoteException ex) {
-            System.out.println(ex);
+                        Logger.getLogger(ClientGui.class.getName()).log(Level.SEVERE, null, ex);
             }    }//GEN-LAST:event_formWindowClosing
     
     //Verbindung mit einem ausgewählten User soll aufgebaut werden
@@ -430,7 +439,8 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
                 //AES Schlüssel anlegen
                  aes.SchlüsselInDatei();
                 
-            } catch (RemoteException ex) {
+            } catch (RemoteException ex) {           
+                Logger.getLogger(ClientGui.class.getName()).log(Level.SEVERE, null, ex);
             } catch (Exception ex) {
                 Logger.getLogger(ClientGui.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -453,6 +463,7 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
                 //Wieder zur online Liste hinzufügen
                 remote.verbinden(UserName.getText());
             } catch (RemoteException ex) {
+                            Logger.getLogger(ClientGui.class.getName()).log(Level.SEVERE, null, ex);
             }
            
         
@@ -464,6 +475,7 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
             // TODO add your handling code here:
             online(remote.online());
         } catch (RemoteException ex) {
+            Logger.getLogger(ClientGui.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_UserListeMouseEntered
         
@@ -615,7 +627,9 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
             Anzeigefeld.append(nachrichten[0] + ": "+  aes.entschlüsseln(aes.SchlüsselAusDatei(), nachrichten[1])+   "\n");
 
         } catch (IOException ex) {
+            Logger.getLogger(ClientGui.class.getName()).log(Level.SEVERE, null, ex);
         }   catch (Exception ex) {
+            Logger.getLogger(ClientGui.class.getName()).log(Level.SEVERE, null, ex);
             }
     }
 }
@@ -646,8 +660,6 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
               
        //Aufruf der Methode speicherAES vom Server und Key und Nutzername übermitteln
        remote.speicherAES(wrappedKey, ZielUser, UserName.getText());
-       //Überprüfung ob es geklappt hat
-       System.out.println("es stimmt");
 
     
     }
@@ -681,7 +693,7 @@ public class ClientGui extends javax.swing.JFrame implements Runnable {
         ObjectInputStream keyIn = new ObjectInputStream(new FileInputStream(datei));
         Key privateKey = (Key) keyIn.readObject();
         keyIn.close();
-        System.out.println(privateKey);
+        //System.out.println(privateKey);
         
         //Entschlüssle das Übergebene Byte Array mittels RSA und privatem Schlüssel
         Cipher cipher = Cipher.getInstance("RSA");
@@ -747,7 +759,7 @@ public static void generateRSA() throws NoSuchAlgorithmException
         out.writeObject(keyPair.getPrivate());
         out.close();
     } catch (IOException | GeneralSecurityException e) {
-        
+        Logger.getLogger(ClientGui.class.getName()).log(Level.SEVERE, null, e);
     }
 }   
     
