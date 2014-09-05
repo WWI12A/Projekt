@@ -748,7 +748,7 @@ public static void generateRSA() throws NoSuchAlgorithmException
     //Erzeugt das Schlüsselpaar mittels RSA
         KeyPairGenerator pairgen = KeyPairGenerator.getInstance("RSA");
         SecureRandom random = new SecureRandom();
-        pairgen.initialize(512, random);
+        pairgen.initialize(2048, random);
         KeyPair keyPair = pairgen.generateKeyPair();
     //öffnet OutputStream zum Schreiben in Datei und holt mittels getPublic den öffentlichen Schlüssel.
         ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(publ));
